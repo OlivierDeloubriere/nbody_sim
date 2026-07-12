@@ -162,7 +162,7 @@ Full methodology, raw results, and reproduction instructions live in
 [`BENCHMARKS.md`](./BENCHMARKS.md).
 
 
-
+## Roadmap
 - [ ] **Euler vs. Leapfrog comparison** — add an explicit Euler integrator
       and demonstrate the energy drift it produces on the same scenario, to
       make the case for Leapfrog concrete rather than asserted.
