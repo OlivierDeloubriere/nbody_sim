@@ -1,9 +1,5 @@
-mod body;
-mod simulation;
-mod vector3;
-
 use body::Body;
-use simulation::Simulation;
+use engine::Simulation;
 use vector3::Vector3;
 
 /// Scénario de démonstration : un corps massif central ("étoile") avec
