@@ -1,4 +1,9 @@
-[package]
-name = "nbody_simulation"
-version = "0.1.0"
-edition = "2021"
+[dependencies]
+# ... rien de changé ici
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "forces"
+harness = false
