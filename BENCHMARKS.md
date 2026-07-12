@@ -43,23 +43,28 @@ HTML report (not reproduced here, since it's regenerated on every run).
 | Version | Method | n=100 | n=500 | n=1000 | n=2000 | n=5000 | Machine |
 |---|---|---|---|---|---|---|---|
 | v0.1 (provisional) | Naive O(n²), single-threaded | 0.037 ms | 0.973 ms | 3.868 ms | 15.895 ms | 96.388 ms | Anthropic sandbox container — ad hoc `Instant` script, not criterion, reference only |
-| v0.1 (criterion) | Naive O(n²), single-threaded | | | | | | *your machine — fill in with `cargo bench` output* |
+| v0.1 (criterion) | Naive O(n²), single-threaded | 0.0594 ms [0.0586, 0.0603] | 1.553 ms [1.534, 1.572] | 6.073 ms [5.982, 6.170] | 24.359 ms [24.106, 24.622] | 151.31 ms [150.16, 152.48] | WSL2 (Ubuntu), Rust 1.97, Olivier's dev machine |
 | v0.2 | Barnes-Hut, single-threaded | | | | | | |
 | v0.3 | Barnes-Hut + rayon | | | | | | |
 
 **Note on the first row:** these numbers predate the switch to criterion —
 measured in a generic sandbox container (unknown CPU, shared/virtualized
 resources) with a simple `Instant`-based loop, not `cargo bench`. They're
-useful only to confirm the expected O(n²) scaling (roughly ×4 time when n
-doubles, which the numbers above do show), and are kept here for continuity
-until superseded. Once you run `cargo bench -p nbody_simulation` on your own
-machine, replace the second row with the real criterion output (mean ±
-confidence interval) — that's the number that actually means something for
-comparisons with Barnes-Hut later.
+kept here only as a historical sanity check on the O(n²) scaling shape;
+the second row (real criterion measurements, on an actual dev machine) is
+the one that matters for any real comparison going forward — in particular
+once Barnes-Hut (v0.2) is implemented, it should be compared against the
+v0.1 (criterion) row, not the provisional one.
 
 ## Observations
 
-- **v0.1 (naive):** scaling matches the expected O(n²) — doubling `n` roughly
-  quadruples the time (500→1000: ×3.97; 1000→2000: ×4.11). This is the
-  expected signature of direct pairwise summation and the baseline that
-  Barnes-Hut is meant to improve on for large `n`.
+- **v0.1 (provisional, sandbox):** scaling matches the expected O(n²) —
+  doubling `n` roughly quadruples the time (500→1000: ×3.97; 1000→2000:
+  ×4.11).
+- **v0.1 (criterion, dev machine):** confirms the same O(n²) signature with
+  tighter, statistically grounded measurements — 500→1000: ×3.91;
+  1000→2000: ×4.01; 2000→5000 (×2.5 in n): ×6.21 (expected ×6.25 for pure
+  O(n²), essentially exact). This is the expected signature of direct
+  pairwise summation and the baseline that Barnes-Hut (v0.2) is meant to
+  improve on for large `n` — the O(n log n) complexity should show a
+  markedly sub-quadratic growth curve by comparison.
