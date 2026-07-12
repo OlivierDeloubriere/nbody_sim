@@ -21,15 +21,15 @@ actually trustworthy.
 For `n` massive bodies interacting under Newtonian gravity, the force on body
 `i` from body `j` is:
 
-```math
+$$
 \vec{F}_{ij} = G \, m_i \, m_j \, \frac{\vec{r}_j - \vec{r}_i}{\left| \vec{r}_j - \vec{r}_i \right|^3}
-```
+$$
 
 and the total acceleration on body `i` is the sum over all other bodies:
 
-```math
+$$
 \vec{a}_i = G \sum_{j \neq i} m_j \, \frac{\vec{r}_j - \vec{r}_i}{\left| \vec{r}_j - \vec{r}_i \right|^3}
-```
+$$
 
 This is an O(n²) computation per timestep: every body interacts with every
 other body. It's exact, but doesn't scale — this is the first bottleneck the
@@ -40,8 +40,8 @@ project is meant to address (see [Roadmap](#roadmap)).
 A raw `1/r²` force diverges as two bodies approach each other, which is both
 physically unrealistic for point masses and numerically dangerous (it can
 produce enormous accelerations that blow up the integration). The standard
-fix is *softening*: replace $`|\vec{r}|`$ with $`\sqrt{|\vec{r}|^2 + \varepsilon^2}`$
-for a small $`\varepsilon`$. This caps the force at close range at the cost
+fix is *softening*: replace $|\vec{r}|$ with $\sqrt{|\vec{r}|^2 + \varepsilon^2}$
+for a small $\varepsilon$. This caps the force at close range at the cost
 of a small, controlled inaccuracy. It's a numerical device, not a physical
 effect.
 
@@ -55,17 +55,17 @@ is causing that.
 
 **Leapfrog** (kick-drift-kick) is used instead:
 
-```math
+$$
 \vec{v}\left(t + \frac{dt}{2}\right) = \vec{v}(t) + \vec{a}(t) \, \frac{dt}{2} \quad \text{(kick)}
-```
+$$
 
-```math
+$$
 \vec{x}(t + dt) = \vec{x}(t) + \vec{v}\left(t + \frac{dt}{2}\right) dt \quad \text{(drift)}
-```
+$$
 
-```math
+$$
 \vec{v}(t + dt) = \vec{v}\left(t + \frac{dt}{2}\right) + \vec{a}(t + dt) \, \frac{dt}{2} \quad \text{(kick)}
-```
+$$
 
 Leapfrog is symplectic: it doesn't conserve energy exactly at every step, but
 it conserves a quantity *close to* the true energy over arbitrarily long
@@ -118,12 +118,12 @@ energy/angular momentum drift at regular intervals.
 Running the default scenario (4 bodies, `dt = 1e-3`, 50,000 steps) gives:
 
 ```
-Énergie initiale:            -1.39339714e-4
-Moment angulaire initial (z): 7.11346938e-4
+Initial energy:              -1.39339714e-4
+Initial angular momentum (z): 7.11346938e-4
 
-t =    5.00 | E drift ≈ 8.6e-11  | Lz drift ≈ -1.7e-15
+t =    5.00 | E = -1.393397e-4 (drift +8.6393e-11) | Lz =  7.113469e-4 (drift -1.6766e-15)
 ...
-t =   50.00 | E drift ≈ -8.0e-11 | Lz drift ≈ -1.0e-14
+t =   50.00 | E = -1.393397e-4 (drift -8.0294e-11) | Lz =  7.113469e-4 (drift -1.0212e-14)
 ```
 
 Energy and angular momentum stay stable to roughly 10 significant figures

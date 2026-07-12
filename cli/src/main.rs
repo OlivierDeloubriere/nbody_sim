@@ -14,10 +14,10 @@ fn main() {
     let e0 = sim.total_energy();
     let l0 = sim.total_angular_momentum();
 
-    println!("=== Simulation N-corps (version naïve O(n²)) ===");
-    println!("Corps: {}", sim.bodies.len());
-    println!("Énergie initiale:            {e0:.8e}");
-    println!("Moment angulaire initial (z): {:.8e}", l0.z);
+    println!("=== N-body simulation (naive O(n²) version) ===");
+    println!("Bodies: {}", sim.bodies.len());
+    println!("Initial energy:               {e0:.8e}");
+    println!("Initial angular momentum (z): {:.8e}", l0.z);
     println!();
 
     for step in 1..=n_steps {
@@ -29,13 +29,13 @@ fn main() {
             let drift_e = (e - e0) / e0;
             let drift_l = (l.z - l0.z) / l0.z;
             println!(
-                "t = {:>7.2} | E = {:>12.6e} (dérive {:>+8.4e}) | Lz = {:>12.6e} (dérive {:>+8.4e})",
+                "t = {:>7.2} | E = {:>12.6e} (drift {:>+8.4e}) | Lz = {:>12.6e} (drift {:>+8.4e})",
                 sim.time, e, drift_e, l.z, drift_l
-            );
+);
         }
     }
 
     println!();
-    println!("Simulation terminée. Une dérive de l'ordre de 1e-3 ou moins");
-    println!("sur l'énergie et le moment angulaire indique un intégrateur sain.");
+    println!("Simulation complete. A drift on the order of 1e-3 or less");
+    println!("in energy and angular momentum indicates a healthy integrator.");
 }
