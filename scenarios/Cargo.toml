@@ -1,0 +1,8 @@
+[package]
+name = "nbody_scenarios"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+nbody_simulation = { path = "../simulation" }
+rand = "0.8"

@@ -4,4 +4,5 @@ members = [
     "simulation",
     "cli",
     "viewer",
+    "scenarios",
 ]
