@@ -21,14 +21,14 @@ actually trustworthy.
 For `n` massive bodies interacting under Newtonian gravity, the force on body
 `i` from body `j` is:
 
-```
-F_ij = G * m_i * m_j * (r_j - r_i) / |r_j - r_i|^3
+```math
+\vec{F}_{ij} = G \, m_i \, m_j \, \frac{\vec{r}_j - \vec{r}_i}{\left| \vec{r}_j - \vec{r}_i \right|^3}
 ```
 
 and the total acceleration on body `i` is the sum over all other bodies:
 
-```
-a_i = G * sum_{j != i} m_j * (r_j - r_i) / |r_j - r_i|^3
+```math
+\vec{a}_i = G \sum_{j \neq i} m_j \, \frac{\vec{r}_j - \vec{r}_i}{\left| \vec{r}_j - \vec{r}_i \right|^3}
 ```
 
 This is an O(n²) computation per timestep: every body interacts with every
@@ -40,9 +40,10 @@ project is meant to address (see [Roadmap](#roadmap)).
 A raw `1/r²` force diverges as two bodies approach each other, which is both
 physically unrealistic for point masses and numerically dangerous (it can
 produce enormous accelerations that blow up the integration). The standard
-fix is *softening*: replace `|r|` with `sqrt(|r|² + ε²)` for a small `ε`. This
-caps the force at close range at the cost of a small, controlled inaccuracy.
-It's a numerical device, not a physical effect.
+fix is *softening*: replace $`|\vec{r}|`$ with $`\sqrt{|\vec{r}|^2 + \varepsilon^2}`$
+for a small $`\varepsilon`$. This caps the force at close range at the cost
+of a small, controlled inaccuracy. It's a numerical device, not a physical
+effect.
 
 ### Why Leapfrog instead of explicit Euler
 
@@ -54,10 +55,16 @@ is causing that.
 
 **Leapfrog** (kick-drift-kick) is used instead:
 
+```math
+\vec{v}\left(t + \frac{dt}{2}\right) = \vec{v}(t) + \vec{a}(t) \, \frac{dt}{2} \quad \text{(kick)}
 ```
-v(t + dt/2) = v(t) + a(t) * dt/2       # kick
-x(t + dt)   = x(t) + v(t + dt/2) * dt  # drift
-v(t + dt)   = v(t + dt/2) + a(t+dt) * dt/2  # kick
+
+```math
+\vec{x}(t + dt) = \vec{x}(t) + \vec{v}\left(t + \frac{dt}{2}\right) dt \quad \text{(drift)}
+```
+
+```math
+\vec{v}(t + dt) = \vec{v}\left(t + \frac{dt}{2}\right) + \vec{a}(t + dt) \, \frac{dt}{2} \quad \text{(kick)}
 ```
 
 Leapfrog is symplectic: it doesn't conserve energy exactly at every step, but
@@ -125,7 +132,36 @@ over the full run — well within the tolerance used in the automated test
 the kind of result that distinguishes "the simulation runs and produces
 pictures" from "the simulation is physically trustworthy."
 
-## Roadmap
+## Benchmarking methodology
+
+Performance is measured with [`criterion`](https://github.com/bheisler/criterion.rs)
+rather than a hand-rolled `Instant`-based timing loop. A manual chrono is easy
+to write but easy to get subtly wrong — criterion exists specifically to
+close those gaps:
+
+- **Warm-up**: runs the code under measurement for a few seconds before
+  recording anything, so CPU cache state and clock frequency have stabilized.
+- **Statistically grounded results**: reports a mean with a confidence
+  interval from hundreds of samples, not a single number that could be a
+  lucky (or unlucky) run.
+- **Outlier detection**: flags measurements that were likely perturbed by
+  something external (OS scheduling, background load) instead of silently
+  averaging them in.
+- **Adaptive sampling**: detects when the default time budget isn't enough
+  to collect a meaningful sample size for slower inputs, and warns rather
+  than returning a degraded result quietly.
+- **Protection against dead-code elimination**: `criterion::black_box`
+  prevents the compiler from optimizing away a computation whose result is
+  otherwise unused, which would otherwise make a benchmark measure nothing.
+- **Regression tracking**: compares each run against the previous one and
+  reports whether performance improved or regressed, which matters here
+  specifically for validating that Barnes-Hut and parallelization actually
+  deliver the expected gains, rather than trusting the implementation on faith.
+
+Full methodology, raw results, and reproduction instructions live in
+[`BENCHMARKS.md`](./BENCHMARKS.md).
+
+
 
 - [ ] **Euler vs. Leapfrog comparison** — add an explicit Euler integrator
       and demonstrate the energy drift it produces on the same scenario, to
