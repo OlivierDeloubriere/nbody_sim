@@ -1,4 +1,5 @@
 use crate::body::Body;
+use crate::snapshot::Snapshot;
 use crate::vector3::Vector3;
 
 pub struct Simulation {
@@ -104,6 +105,14 @@ impl Simulation {
             .iter()
             .fold(Vector3::ZERO, |acc, b| acc + b.momentum())
     }
+
+    pub fn snapshot(&self) -> Snapshot {
+    Snapshot {
+        time: self.time,
+        positions: self.bodies.iter().map(|b| b.position).collect(),
+        velocities: self.bodies.iter().map(|b| b.velocity).collect(),
+    }
+}
 }
 
 #[cfg(test)]
