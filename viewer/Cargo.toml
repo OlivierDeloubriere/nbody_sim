@@ -4,4 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+macroquad = "0.4.15"
 nbody_simulation = { path = "../simulation" }
+nbody_scenarios = { path = "../scenarios" }
