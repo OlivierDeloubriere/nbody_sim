@@ -14,20 +14,20 @@ pub fn random_cluster(n: usize, seed: u64) -> Vec<Body> {
         .collect()
 }
 
-/// Scénario de démonstration : un corps massif central ("étoile") avec
-/// quelques corps légers en orbite ("planètes") à différents rayons.
-/// Simple à valider physiquement : chaque orbite doit rester stable.
+/// Demo scenario : a massive central body ("star") with
+/// several light bodies in orbit ("planets") at different radii.
+/// Simple to validate physically : each orbit must remain stable.
 pub fn solar_like_system() -> Vec<Body> {
     let g: f64 = 1.0;
     let star_mass: f64 = 1.0;
 
     let mut bodies = vec![Body::new(star_mass, Vector3::ZERO, Vector3::ZERO)];
 
-    // (rayon orbital, masse relative)
+    // (orbital radius, relative mass)
     let planets = [(1.0, 1e-4), (2.0, 3e-4), (3.5, 1e-4)];
 
     for (r, mass) in planets {
-        let v = (g * star_mass / r).sqrt(); // vitesse orbitale circulaire
+        let v = (g * star_mass / r).sqrt(); // circular orbital velocity
         bodies.push(Body::new(
             mass,
             Vector3::new(r, 0.0, 0.0),
