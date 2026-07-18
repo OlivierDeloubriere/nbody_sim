@@ -1,14 +1,13 @@
 use macroquad::prelude::*;
 use nbody_scenarios::solar_like_system;
 use nbody_simulation::engine::Simulation;
+use nbody_viewer::accumulator::FixedStepAccumulator;
+use nbody_viewer::steppable::Steppable;
 
-/// Scale factor: how many pixels represent one unit of physical distance.
-/// Purely visual, does not affect the simulation itself.
 const PIXELS_PER_UNIT: f32 = 60.0;
-
-/// Radius (in pixels) used to draw each body.
-/// Fixed for now — could depend on mass later.
 const POINT_RADIUS: f32 = 5.0;
+const PHYSICS_DT: f64 = 1e-3;
+const SIM_SPEED: f64 = 5.0;
 
 fn window_conf() -> Conf {
     Conf {
@@ -19,9 +18,6 @@ fn window_conf() -> Conf {
     }
 }
 
-/// Projects a physical 3D position (f64) to a 2D screen coordinate (f32),
-/// ignoring the z axis for now (simple XY projection) and centering the
-/// physical origin at the middle of the window.
 fn project_to_screen(pos: nbody_simulation::vector3::Vector3) -> (f32, f32) {
     let cx = screen_width() / 2.0;
     let cy = screen_height() / 2.0;
@@ -32,14 +28,15 @@ fn project_to_screen(pos: nbody_simulation::vector3::Vector3) -> (f32, f32) {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    // Step 3: just a static snapshot for now, no step() yet.
-    // The fixed-timestep accumulator (step 4) will replace this single
-    // snapshot with a real physics loop.
     let bodies = solar_like_system();
-    let sim = Simulation::new(bodies, 1.0, 1e-4);
-    let snapshot = sim.snapshot();
+    let mut sim = Simulation::new(bodies, 1.0, 1e-4);
+    let mut accumulator = FixedStepAccumulator::new(PHYSICS_DT, SIM_SPEED);
 
     loop {
+        accumulator.advance(&mut sim, get_frame_time() as f64);
+
+        let snapshot = Steppable::snapshot(&sim);
+
         clear_background(BLACK);
 
         for pos in &snapshot.positions {
