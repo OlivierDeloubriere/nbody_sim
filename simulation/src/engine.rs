@@ -1,78 +1,40 @@
 use crate::body::Body;
+use crate::forces::compute_accelerations;
+use crate::integrator::{Integrator, LeapfrogIntegrator};
 use crate::snapshot::Snapshot;
 use crate::vector3::Vector3;
 
 pub struct Simulation {
     pub bodies: Vec<Body>,
     pub g: f64,
-    /// Paramètre d'adoucissement (softening) : évite la divergence de la force
-    /// quand deux corps se rapprochent trop (singularité en 1/r²).
-    /// C'est une astuce numérique standard en simulation N-corps,
-    /// pas un phénomène physique réel.
     pub softening: f64,
     pub time: f64,
+    integrator: Box<dyn Integrator>,
 }
 
 impl Simulation {
     pub fn new(bodies: Vec<Body>, g: f64, softening: f64) -> Self {
-        Self { bodies, g, softening, time: 0.0 }
+        Self::with_integrator(bodies, g, softening, Box::new(LeapfrogIntegrator))
     }
 
-    /// Calcul direct des accélérations, O(n²).
-    /// Pour chaque corps i, on somme la contribution gravitationnelle
-    /// de tous les autres corps j : a_i = G * sum_j m_j * (r_j - r_i) / |r_j - r_i + eps|^3
+    pub fn with_integrator(
+        bodies: Vec<Body>,
+        g: f64,
+        softening: f64,
+        integrator: Box<dyn Integrator>,
+    ) -> Self {
+        Self { bodies, g, softening, time: 0.0, integrator }
+    }
+
     pub fn compute_accelerations(&self) -> Vec<Vector3> {
-        let n = self.bodies.len();
-        let mut accelerations = vec![Vector3::ZERO; n];
-        let eps2 = self.softening * self.softening;
-
-        for i in 0..n {
-            let mut acc = Vector3::ZERO;
-            for j in 0..n {
-                if i == j {
-                    continue;
-                }
-                let delta = self.bodies[j].position - self.bodies[i].position;
-                let dist_sq = delta.norm_squared() + eps2;
-                let dist = dist_sq.sqrt();
-                // F = G * m_i * m_j / dist² ; a_i = F / m_i = G * m_j / dist²
-                let factor = self.g * self.bodies[j].mass / (dist_sq * dist);
-                acc += delta * factor;
-            }
-            accelerations[i] = acc;
-        }
-        accelerations
+        compute_accelerations(&self.bodies, self.g, self.softening)
     }
 
-    /// Un pas d'intégration Leapfrog (kick-drift-kick), symplectique.
-    /// Contrairement à Euler explicite, cet intégrateur conserve
-    /// approximativement l'énergie sur de longues durées, ce qui est
-    /// crucial pour une simulation gravitationnelle crédible.
     pub fn step(&mut self, dt: f64) {
-        let acc = self.compute_accelerations();
-
-        // Kick (demi-pas sur la vitesse)
-        for (body, a) in self.bodies.iter_mut().zip(acc.iter()) {
-            body.velocity += *a * (dt * 0.5);
-        }
-
-        // Drift (pas complet sur la position)
-        for body in self.bodies.iter_mut() {
-            body.position += body.velocity * dt;
-        }
-
-        // Recalcul des accélérations à la nouvelle position
-        let acc = self.compute_accelerations();
-
-        // Kick (deuxième demi-pas sur la vitesse)
-        for (body, a) in self.bodies.iter_mut().zip(acc.iter()) {
-            body.velocity += *a * (dt * 0.5);
-        }
-
+        self.integrator.step(&mut self.bodies, self.g, self.softening, dt);
         self.time += dt;
     }
 
-    /// Énergie potentielle gravitationnelle totale du système.
     pub fn potential_energy(&self) -> f64 {
         let n = self.bodies.len();
         let mut energy = 0.0;
@@ -107,27 +69,25 @@ impl Simulation {
     }
 
     pub fn snapshot(&self) -> Snapshot {
-    Snapshot {
-        time: self.time,
-        positions: self.bodies.iter().map(|b| b.position).collect(),
-        velocities: self.bodies.iter().map(|b| b.velocity).collect(),
+        Snapshot {
+            time: self.time,
+            positions: self.bodies.iter().map(|b| b.position).collect(),
+            velocities: self.bodies.iter().map(|b| b.velocity).collect(),
+        }
     }
-}
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::vector3::Vector3;
 
-    /// Système à deux corps en orbite circulaire : vérifie que
-    /// l'énergie totale reste stable sur plusieurs orbites.
     #[test]
     fn test_energy_conservation_two_body() {
         let g: f64 = 1.0;
         let m1: f64 = 1.0;
-        let m2: f64 = 1e-3; // corps léger en orbite autour d'un corps massif
+        let m2: f64 = 1e-3;
         let r: f64 = 1.0;
-        // Vitesse orbitale circulaire : v = sqrt(G * m1 / r)
         let v = (g * m1 / r).sqrt();
 
         let bodies = vec![
